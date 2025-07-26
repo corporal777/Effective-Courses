@@ -64,7 +64,6 @@ dependencies {
     implementation(libs.compose.ui.graphics)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.constraintlayout)
-    implementation(libs.compose.shimmer)
 
 
     implementation(libs.androidx.navigation.compose)
