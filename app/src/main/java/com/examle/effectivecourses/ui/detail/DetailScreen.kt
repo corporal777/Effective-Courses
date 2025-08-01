@@ -1,5 +1,6 @@
 package com.examle.effectivecourses.ui.detail
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -22,6 +23,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -73,12 +75,18 @@ fun DetailScreen(
     val uiState = viewModel.courseDetail.value
     val scrollState = rememberScrollState()
 
-    Box(Modifier.fillMaxSize().background(AppBackgroundColor)) {
+    DisposableEffect(Unit) {
+        viewModel.getCourseDetail(courseId)
+        onDispose { }
+    }
 
-        if (uiState == null) {
-            LoadingItem()
-            viewModel.getCourseDetail(courseId)
-        }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(AppBackgroundColor)
+    ) {
+
+        if (uiState == null) LoadingItem()
         else {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -204,7 +212,7 @@ private fun HeaderItem(course: CourseModel) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(270.dp)
-                .constrainAs(image){ top.linkTo(parent.top) },
+                .constrainAs(image) { top.linkTo(parent.top) },
             painter = painterResource(R.drawable.image),
             contentDescription = "",
             contentScale = ContentScale.FillBounds,

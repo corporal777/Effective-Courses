@@ -1,5 +1,6 @@
 package com.examle.effectivecourses.ui.home
 
+import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import com.effective.networkmodule.model.CourseModel
@@ -31,6 +32,7 @@ class HomeViewModel(
 
     private val coursesList = arrayListOf<CourseModel>()
     private var searchText = ""
+    var itemNum = "0"
 
 
     init {

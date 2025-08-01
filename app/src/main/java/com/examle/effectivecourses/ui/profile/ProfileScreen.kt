@@ -1,5 +1,8 @@
 package com.examle.effectivecourses.ui.profile
 
+import android.util.Log
+import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -19,6 +22,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.examle.effectivecourses.R
 import com.examle.effectivecourses.dataSource.model.MyCourseModel
 import com.examle.effectivecourses.extensions.clickable
@@ -66,8 +72,10 @@ fun ProfileScreen(
 ) {
 
     val uiState = viewModel.courses.value
-    var loadingState by remember { mutableStateOf(false) }
-    loadingState = viewModel.loading.value
+
+    var logoutState by remember { mutableStateOf(false) }
+    logoutState = viewModel.logoutSuccess.value
+
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -87,16 +95,15 @@ fun ProfileScreen(
         ProfileButtonItem("Выйти из аккаунта", 3){ viewModel.logoutProfile() }
 
         TitleItem()
+        uiState.forEach { course -> if (course == null) ShimmerItem() else CourseItem(course) }
 
 
-
-        uiState.forEach { course ->
-            if (course == null) ShimmerItem()
-            else CourseItem(course)
+        DisposableEffect(logoutState) {
+            if (logoutState) onLogout.invoke()
+            onDispose { }
         }
 
-        viewModel.onLogoutSuccess = { onLogout.invoke() }
-        if (loadingState) ProgressDialog()
+        ProgressDialog(viewModel.loading.value)
     }
 }
 

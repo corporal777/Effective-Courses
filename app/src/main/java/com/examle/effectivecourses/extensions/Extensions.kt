@@ -8,7 +8,6 @@ import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -24,13 +23,11 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -208,6 +205,15 @@ fun Modifier.shimmerLoading(
                 end = Offset(x = translateAnimation + 100f, y = translateAnimation + 100f),
             )
         )
+    }
+}
+
+
+@Composable
+fun DisposableAction(key: Any, onDispose: ((dispose : Boolean) -> Unit?)? = null, onChanged: () -> Unit){
+    DisposableEffect(key) {
+        onChanged.invoke()
+        onDispose { onDispose?.invoke(true) }
     }
 }
 
