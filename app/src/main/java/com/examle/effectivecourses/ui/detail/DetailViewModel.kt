@@ -2,6 +2,7 @@ package com.examle.effectivecourses.ui.detail
 
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.viewModelScope
 import com.effective.networkmodule.model.CourseModel
 import com.examle.effectivecourses.dataSource.data.AppData
 import com.examle.effectivecourses.di.repository.CoursesRepository
@@ -10,6 +11,15 @@ import com.examle.effectivecourses.extensions.performOnBackgroundOutOnMain
 import com.examle.effectivecourses.ui.base.BaseViewModel
 import io.reactivex.Maybe
 import io.reactivex.rxkotlin.subscribeBy
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.flatMap
+import kotlinx.coroutines.flow.flatMapConcat
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
 
 class DetailViewModel(
     private val repository: CoursesRepository,

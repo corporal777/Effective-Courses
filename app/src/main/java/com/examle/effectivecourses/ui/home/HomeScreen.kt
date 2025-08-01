@@ -1,5 +1,6 @@
 package com.examle.effectivecourses.ui.home
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,6 +22,8 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,6 +53,7 @@ import com.examle.effectivecourses.extensions.clickable
 import com.examle.effectivecourses.ui.theme.AppBackgroundColor
 import com.examle.effectivecourses.ui.theme.CourseFavoriteBackColor
 import com.examle.effectivecourses.ui.theme.CourseFavoriteIconColor
+import com.examle.effectivecourses.ui.theme.CourseFavoriteLoadingBackColor
 import com.examle.effectivecourses.ui.theme.CourseItemColor
 import com.examle.effectivecourses.ui.theme.CourseItemTextColor
 import com.examle.effectivecourses.ui.theme.CourseMoreTextColor
@@ -66,6 +71,8 @@ fun HomeScreen(
 ) {
 
     val uiState = viewModel.courses.value
+
+    Log.e("RATE DATA", uiState.toString())
 
     ConstraintLayout(
         modifier = Modifier
@@ -184,12 +191,6 @@ private fun CourseItem(
     onItemClick: (id: String) -> Unit
 ) {
 
-    var rate by remember { mutableStateOf("") }
-    rate = course.rate
-
-    var startDate by remember { mutableStateOf("") }
-    startDate = course.startDate
-
     var courseTitle by remember { mutableStateOf("") }
     courseTitle = course.title
 
@@ -199,12 +200,19 @@ private fun CourseItem(
     var coursePrice by remember { mutableStateOf("") }
     coursePrice = course.price
 
-    val buttonState by viewModel.buttonLoading
-    var isLoading by rememberSaveable { mutableStateOf(false) }
-    isLoading = if (buttonState.first.toString() == course.id) buttonState.second else false
+    var rate by remember { mutableStateOf("") }
+    rate = course.rate
 
-    var isLiked by rememberSaveable { mutableStateOf(false) }
+    var startDate by remember { mutableStateOf("") }
+    startDate = course.startDate
+
+    var isLiked by remember { mutableStateOf(false) }
     isLiked = course.hasLike
+
+    var isLoading by remember { mutableStateOf(false) }
+    isLoading = if (viewModel.buttonLoading.value.first.toString() == course.id)
+        viewModel.buttonLoading.value.second
+    else false
 
     ConstraintLayout(
         modifier = Modifier
@@ -213,6 +221,8 @@ private fun CourseItem(
             .clickable(Color.White) { onItemClick.invoke(course.id) }
             .padding(bottom = 15.dp)
     ) {
+
+
         val (image, title, text, price, more, moreIcon, favorite, favBlur, date, progress) = createRefs()
 
         Image(
@@ -238,14 +248,15 @@ private fun CourseItem(
                     top.linkTo(image.top, 10.dp)
                     end.linkTo(image.end, 10.dp)
                 }
-                .clickable(Color.White, enabled = !isLoading) { onFavoriteClick.invoke(course) }
+                .clickable(Color.White) { onFavoriteClick.invoke(course) }
                 .padding(8.dp)
-                .alpha(if (isLoading) 0f else 1f)
         )
+
 
         if (isLoading) {
             CircularProgressIndicator(
                 modifier = Modifier
+                    .clip(CircleShape)
                     .size(35.dp)
                     .constrainAs(progress) {
                         top.linkTo(favorite.top)
@@ -253,6 +264,7 @@ private fun CourseItem(
                         start.linkTo(favorite.start)
                         end.linkTo(favorite.end)
                     }
+                    .background(CourseFavoriteLoadingBackColor)
                     .padding(5.dp),
                 color = CourseFavoriteIconColor,
                 trackColor = Color.Transparent,

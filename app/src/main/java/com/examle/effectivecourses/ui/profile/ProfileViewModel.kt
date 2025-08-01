@@ -20,6 +20,10 @@ class ProfileViewModel(
     private val _courses = mutableStateOf<List<MyCourseModel?>>(List(1) { null })
     val courses: State<List<MyCourseModel?>> = _courses
 
+    private val _logoutSuccess = mutableStateOf<Boolean>(false)
+    val logoutSuccess: State<Boolean> = _logoutSuccess
+
+
     var onLogoutSuccess: () -> Unit = { }
 
     init {
@@ -35,7 +39,7 @@ class ProfileViewModel(
             .withDelay(1000)
             .performOnBackgroundOutOnMain()
             .withLoading()
-            .subscribeBy { onLogoutSuccess.invoke() }
+            .subscribeBy { _logoutSuccess.value = true }
             .call(compositeDisposable)
     }
 }

@@ -23,7 +23,6 @@ import com.examle.effectivecourses.ui.theme.AppBackgroundColor
 import com.examle.effectivecourses.ui.theme.BottomBarLineColor
 import com.examle.effectivecourses.ui.theme.CourseFavoriteBackColor
 import com.examle.effectivecourses.ui.theme.CourseItemColor
-import com.valentinilk.shimmer.shimmer
 
 @Composable
 fun ShimmerItem() {

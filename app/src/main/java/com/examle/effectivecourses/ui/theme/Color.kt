@@ -16,9 +16,12 @@ val CourseItemTextColor = Color(0xFFF2F2F3)
 val CourseLessonColor = Color(0x80F2F2F3)
 val CourseMoreTextColor = Color(0xFF12B956)
 val CourseFavoriteBackColor = Color(0xB332333A)
+val CourseFavoriteLoadingBackColor = Color(0xFF32333A)
 val CourseFavoriteIconColor = Color(0xFFF2F2F3)
 val BottomItemIndicatorColor = Color(0xFF32333A)
 val BottomBarLineColor = Color(0xFF4D555E)
 val VkColor = Color(0xFF2683ED)
 val OdnoklassnikiColorTop = Color(0xFFF98509)
 val OdnoklassnikiColorBottom = Color(0xFFF95D00)
+
+

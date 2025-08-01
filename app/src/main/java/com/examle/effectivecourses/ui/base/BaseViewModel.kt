@@ -28,7 +28,7 @@ abstract class BaseViewModel : ViewModel() {
 
     val compositeDisposable = CompositeDisposable()
 
-    private val _loading = mutableStateOf<Boolean>(false)
+    val _loading = mutableStateOf<Boolean>(false)
     val loading: State<Boolean> = _loading
 
     private val _buttonLoading = mutableStateOf<Pair<Int, Boolean>>(Pair(0, false))
