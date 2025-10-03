@@ -1,110 +1,68 @@
 package com.examle.effectivecourses.ui.home
 
-import android.util.Log
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
-import com.effective.networkmodule.model.CourseModel
-import com.examle.effectivecourses.dataSource.data.AppData
-import com.examle.effectivecourses.di.repository.CoursesRepository
-import com.examle.effectivecourses.extensions.call
-import com.examle.effectivecourses.extensions.performOnBackgroundOutOnMain
-import com.examle.effectivecourses.extensions.withDelay
+import androidx.lifecycle.viewModelScope
+import com.examle.domain.interactor.CourseInteractor
+import com.examle.domain.model.CourseModel
+import com.examle.domain.model.DataState
 import com.examle.effectivecourses.ui.base.BaseViewModel
-import com.examle.effectivecourses.utils.DateUtils.timeMillis
-import io.reactivex.Flowable
-import io.reactivex.Maybe
-import io.reactivex.rxkotlin.subscribeBy
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 class HomeViewModel(
-    private val repository: CoursesRepository,
-    private val appData: AppData
+    private val interactor: CourseInteractor
 ) : BaseViewModel() {
 
-    private val _courses = mutableStateOf<List<CourseModel?>>(List(2) { null })
-    val courses: State<List<CourseModel?>> = _courses
+    private val refreshListener = MutableSharedFlow<StateTriggers>()
 
-    private val _shimmerLoading = mutableStateOf<Boolean>(true)
-    val shimmerLoading: State<Boolean> = _shimmerLoading
-
-//    private val _uiState = MutableStateFlow<List<CourseModel?>>(List(3) { null })
-//    val uiState: StateFlow<List<CourseModel?>> = _uiState.asStateFlow()
-
-
-    private val coursesList = arrayListOf<CourseModel>()
-    private var searchText = ""
-    var itemNum = "0"
-
-
-    init {
-        repository.getCourses()
-            .doOnSuccess { coursesList.addAll(it) }
-            .performOnBackgroundOutOnMain()
-            .subscribeBy { list -> _courses.value = list }
-            .call(compositeDisposable)
-
-        appData.getCourseChangedSubject()
-            .map { course ->
-                val item = coursesList.find { it.id == course.id }
-                val index = coursesList.indexOf(item)
-                item?.let { coursesList[index] = it.copy(hasLike = course.hasLike) }
-                coursesList.map { it }
+    val courses: Flow<DataState<List<CourseModel>>> = flow {
+        emit(interactor.getCoursesList()
+            .fold(onSuccess = { DataState.Success(it) }, onFailure = { DataState.Error })
+        )
+        refreshListener.collect { refreshParams ->
+            when (refreshParams) {
+                is StateTriggers.Loading -> emit(DataState.Loading)
+                is StateTriggers.Update -> emit(DataState.Success(interactor.getCoursesLocal()))
             }
-            .performOnBackgroundOutOnMain()
-            .subscribeBy(
-                onError = { it.printStackTrace() },
-                onNext = { _courses.value = it }
-            ).call(compositeDisposable)
-
+        }
     }
+        .distinctUntilChanged()
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            DataState.Loading
+        )
+
 
     fun sortCoursesByDate(isSorted: Boolean) {
-        showShimmer()
-        Maybe.just(coursesList)
-            .map { if (isSorted) it.sortedByDescending { it.publishDate.timeMillis() } else it }
-            .withDelay(500)
-            .performOnBackgroundOutOnMain()
-            .subscribeBy(
-                onError = { it.printStackTrace() },
-                onSuccess = { _courses.value = it }
-            ).call(compositeDisposable)
+        viewModelScope.launch {
+            refreshListener.emit(StateTriggers.Loading)
+            interactor.setCoursesSorted(isSorted)
+            delay(500)
+            refreshListener.emit(StateTriggers.Update)
+        }
     }
 
-    fun searchCourse(text: String) {
-        if (searchText == text) return
-        searchText = text
-        //showShimmer()
-        Flowable.just(coursesList)
-            .map { it.filter { if (text.isNotBlank()) it.text.contains(text, true) else true } }
-            //.withDelay(500)
-            .performOnBackgroundOutOnMain()
-            .subscribeBy(
-                onError = { it.printStackTrace() },
-                onNext = { _courses.value = it }
-            ).call(compositeDisposable)
-    }
 
     fun addCourseToFavorite(model: CourseModel) {
-        Maybe.defer {
-            if (model.hasLike) repository.removeCourseFavorite(model)
-            else repository.addCourseFavorite(model)
+        viewModelScope.launch {
+            interactor.addOrRemoveCourseFavourite(model)
+                .withProgressLoading()
+                .collectLatest {
+                    refreshListener.emit(StateTriggers.Update)
+                }
         }
-            .doOnSuccess { course ->
-                val item = coursesList.find { it.id == course.id }
-                val index = coursesList.indexOf(item)
-                item?.let { coursesList.set(index, it.copy(hasLike = course.isFavorite)) }
-            }
-            .map { coursesList.map { it } }
-            .withDelay(500)
-            .performOnBackgroundOutOnMain()
-            .withButtonLoading(model.id)
-            .subscribeBy(
-                onError = { it.printStackTrace() },
-                onSuccess = { _courses.value = it }
-            ).call(compositeDisposable)
-    }
 
-
-    private fun showShimmer() {
-        _courses.value = List(2) { null }
     }
+}
+
+sealed class StateTriggers {
+    data object Update : StateTriggers()
+    data object Loading : StateTriggers()
 }

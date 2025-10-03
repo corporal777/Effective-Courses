@@ -51,8 +51,10 @@ android {
 }
 
 dependencies {
-    implementation(project(":networkModule"))
-    implementation(project(":localDataModule"))
+
+    implementation(project(":common"))
+    implementation(project(":data"))
+    implementation(project(":domain"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

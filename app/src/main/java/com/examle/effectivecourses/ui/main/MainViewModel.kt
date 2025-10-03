@@ -2,27 +2,26 @@ package com.examle.effectivecourses.ui.main
 
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
-import com.effective.networkmodule.model.CourseModel
-import com.examle.effectivecourses.dataSource.data.AppData
-import com.examle.effectivecourses.extensions.call
-import com.examle.effectivecourses.extensions.performOnBackgroundOutOnMain
-import com.examle.effectivecourses.extensions.withDelay
+import androidx.lifecycle.viewModelScope
+import com.examle.data.data.AppData
 import com.examle.effectivecourses.ui.base.BaseViewModel
 import io.reactivex.Completable
-import io.reactivex.Maybe
 import io.reactivex.rxkotlin.subscribeBy
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
-class MainViewModel(private val appData: AppData) : BaseViewModel() {
+class MainViewModel() : BaseViewModel() {
 
-    private val _isSplashShown = mutableStateOf<Boolean>(true)
-    val isSplashShown: State<Boolean> = _isSplashShown
+    private val _isSplashShown = MutableStateFlow<Boolean>(true)
+    val isSplashShown: StateFlow<Boolean> = _isSplashShown.asStateFlow()
 
     init {
-        Completable.complete()
-            .withDelay(1000)
-            .performOnBackgroundOutOnMain()
-            .subscribeBy {
-                _isSplashShown.value = false
-            }.call(compositeDisposable)
+        viewModelScope.launch {
+            delay(1000)
+            _isSplashShown.value = false
+        }
     }
 }

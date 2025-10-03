@@ -1,6 +1,5 @@
 package com.examle.effectivecourses.navigation
 
-import android.util.Log
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -8,17 +7,11 @@ import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.core.os.bundleOf
 import androidx.navigation.NamedNavArgument
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
@@ -26,11 +19,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navOptions
-import com.examle.effectivecourses.dataSource.data.AppData
-import com.examle.effectivecourses.extensions.animComposable
-import com.examle.effectivecourses.extensions.enterTransition
-import com.examle.effectivecourses.extensions.exitTransition
-import com.examle.effectivecourses.extensions.popExitTransition
+import com.examle.data.data.AppData
 import com.examle.effectivecourses.ui.detail.DetailScreen
 import com.examle.effectivecourses.ui.favorite.FavoriteScreen
 import com.examle.effectivecourses.ui.home.HomeScreen
@@ -46,7 +35,6 @@ fun NavGraph(navController: NavHostController, paddingValues: PaddingValues) {
 
     NavHost(
         navController = navController,
-        //startDestination = "login",
         startDestination = startDestination,
         enterTransition = { EnterTransition.None },
         exitTransition = { ExitTransition.None }
@@ -65,7 +53,10 @@ fun NavGraph(navController: NavHostController, paddingValues: PaddingValues) {
 
         fadeAnimComposable(route = "detail/{courseId}") { stack ->
             val courseId = stack.arguments?.getString("courseId") ?: "0"
-            DetailScreen(paddingValues, courseId) { navController.navigateUp() }
+            DetailScreen(paddingValues, courseId) {
+                navController.navigateUp()
+            }
+
         }
 
         fadeAnimComposable(route = "favorite") {

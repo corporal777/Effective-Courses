@@ -112,6 +112,7 @@ val popEnterTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> 
 fun Modifier.clickable(
     rippleColor: Color? = null,
     enabled: Boolean = true,
+    source: MutableInteractionSource? = null,
     onClick: () -> Unit
 ) = composed(
     inspectorInfo = debugInspectorInfo {
@@ -127,7 +128,7 @@ fun Modifier.clickable(
                 color = it
             )
         } ?: LocalIndication.current,
-        interactionSource = remember { MutableInteractionSource() },
+        interactionSource = source ?: remember { MutableInteractionSource() },
         enabled = enabled
     )
 }

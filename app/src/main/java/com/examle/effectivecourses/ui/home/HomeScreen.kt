@@ -1,6 +1,5 @@
 package com.examle.effectivecourses.ui.home
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -11,55 +10,44 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.InlineTextContent
-import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.Placeholder
-import androidx.compose.ui.text.PlaceholderVerticalAlign
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.constraintlayout.compose.ConstrainedLayoutReference
 import androidx.constraintlayout.compose.ConstraintLayout
-import androidx.constraintlayout.compose.ConstraintLayoutScope
-import androidx.constraintlayout.compose.Dimension
+import com.examle.domain.model.CourseModel
+import com.examle.domain.model.DataState
 import com.examle.effectivecourses.R
-import com.effective.networkmodule.model.CourseModel
 import com.examle.effectivecourses.extensions.clickable
+import com.examle.effectivecourses.ui.components.TextWithIcon
+import com.examle.effectivecourses.ui.home.components.SearchItem
 import com.examle.effectivecourses.ui.theme.AppBackgroundColor
 import com.examle.effectivecourses.ui.theme.CourseFavoriteBackColor
 import com.examle.effectivecourses.ui.theme.CourseFavoriteIconColor
-import com.examle.effectivecourses.ui.theme.CourseFavoriteLoadingBackColor
 import com.examle.effectivecourses.ui.theme.CourseItemColor
 import com.examle.effectivecourses.ui.theme.CourseItemTextColor
 import com.examle.effectivecourses.ui.theme.CourseMoreTextColor
-import com.examle.effectivecourses.utils.AppTextFieldBig
-import com.examle.effectivecourses.utils.DateUtils.formatToDefaultDayMonthYearDate
-import com.examle.effectivecourses.utils.ShimmerItem
+import com.examle.effectivecourses.ui.components.ProgressDialog
+import com.examle.effectivecourses.ui.components.ShimmerItem
 import com.examle.effectivecourses.utils.TextUtils
 import org.koin.androidx.compose.koinViewModel
 
@@ -67,12 +55,16 @@ import org.koin.androidx.compose.koinViewModel
 fun HomeScreen(
     padding: PaddingValues,
     viewModel: HomeViewModel = koinViewModel(),
-    onItemClick: (id: String) -> Unit
+    onItemClick: (String) -> Unit
 ) {
 
-    val uiState = viewModel.courses.value
+    val uiState by viewModel.courses.collectAsState(DataState.Loading)
 
-    Log.e("RATE DATA", uiState.toString())
+    val isLoadingState by viewModel.loading.collectAsState()
+    var isLoading by remember { mutableStateOf(false) }
+    LaunchedEffect(isLoadingState) { isLoading = isLoadingState }
+
+    ProgressDialog(isLoading)
 
     ConstraintLayout(
         modifier = Modifier
@@ -85,7 +77,7 @@ fun HomeScreen(
 
         SearchItem(
             input, filter, sort, sortIcon, spacer,
-            { viewModel.searchCourse(it) },
+            {  },
             { viewModel.sortCoursesByDate(it) }
         )
 
@@ -93,126 +85,32 @@ fun HomeScreen(
             .fillMaxWidth()
             .constrainAs(content) { top.linkTo(spacer.bottom) }) {
 
-            uiState.forEach { course ->
-                if (course == null) ShimmerItem()
-                else CourseItem(
-                    viewModel,
-                    course,
-                    { viewModel.addCourseToFavorite(it) },
-                    { onItemClick.invoke(it) })
+            when (uiState) {
+                DataState.Error -> {}
+                DataState.Loading -> ShimmerItem()
+                else -> {
+                    (uiState as DataState.Success<List<CourseModel>>).data.forEach { course ->
+                        CourseItem(
+                            course,
+                            onItemClick = { onItemClick.invoke(it) },
+                            onFavoriteClick = { viewModel.addCourseToFavorite(it) })
+                    }
+                }
             }
         }
     }
 }
 
-
-@Composable
-private fun ConstraintLayoutScope.SearchItem(
-    input: ConstrainedLayoutReference,
-    filter: ConstrainedLayoutReference,
-    sort: ConstrainedLayoutReference,
-    sortIcon: ConstrainedLayoutReference,
-    spacer: ConstrainedLayoutReference,
-    onTextChange: (text: String) -> Unit,
-    onSort: (isSorted: Boolean) -> Unit
-) {
-    var isSorted by remember { mutableStateOf(false) }
-
-    AppTextFieldBig(
-        Modifier
-            .height(55.dp)
-            .fillMaxWidth()
-            .constrainAs(input) {
-                top.linkTo(parent.top)
-                start.linkTo(parent.start)
-                end.linkTo(filter.start)
-                width = Dimension.fillToConstraints
-            }
-            .padding(end = 15.dp), onTextChange
-    )
-
-    Icon(
-        painter = painterResource(R.drawable.ic_filter),
-        contentDescription = "",
-        tint = Color.White,
-        modifier = Modifier
-            .clip(CircleShape)
-            .size(55.dp)
-            .background(CourseItemColor)
-            .constrainAs(filter) {
-                top.linkTo(input.top)
-                bottom.linkTo(input.bottom)
-                end.linkTo(parent.end)
-                start.linkTo(input.end)
-            }
-            .padding(15.dp)
-    )
-
-    Text(
-        text = if (!isSorted) "По дате добавления" else "Сбросить",
-        color = CourseMoreTextColor,
-        fontSize = 16.sp,
-        fontFamily = TextUtils.robotoFont,
-        fontWeight = FontWeight.Medium,
-        modifier = Modifier
-            .padding(end = 5.dp)
-            .constrainAs(sort) {
-                top.linkTo(input.bottom, 15.dp)
-                end.linkTo(sortIcon.start)
-            }
-            .clickable(Color.White) {
-                isSorted = !isSorted
-                onSort.invoke(isSorted)
-            }
-    )
-
-    Icon(
-        painter = painterResource(R.drawable.ic_arrow_down_up),
-        contentDescription = "",
-        tint = CourseMoreTextColor,
-        modifier = Modifier.constrainAs(sortIcon) {
-            end.linkTo(parent.end)
-            top.linkTo(sort.top)
-            bottom.linkTo(sort.bottom)
-        })
-
-    Spacer(modifier = Modifier
-        .fillMaxWidth()
-        .height(20.dp)
-        .constrainAs(spacer) { top.linkTo(sort.bottom) })
-}
-
-
 @Composable
 private fun CourseItem(
-    viewModel: HomeViewModel,
     course: CourseModel,
     onFavoriteClick: (model: CourseModel) -> Unit,
-    onItemClick: (id: String) -> Unit
+    onItemClick: (String) -> Unit
 ) {
 
-    var courseTitle by remember { mutableStateOf("") }
-    courseTitle = course.title
-
-    var courseText by remember { mutableStateOf("") }
-    courseText = course.text
-
-    var coursePrice by remember { mutableStateOf("") }
-    coursePrice = course.price
-
-    var rate by remember { mutableStateOf("") }
-    rate = course.rate
-
-    var startDate by remember { mutableStateOf("") }
-    startDate = course.startDate
-
     var isLiked by remember { mutableStateOf(false) }
-    isLiked = course.hasLike
+    isLiked = course.isLiked
 
-    var isLoading by remember { mutableStateOf(false) }
-    isLoading = if (viewModel.buttonLoading.value.first.toString() == course.id)
-        viewModel.buttonLoading.value.second
-    else false
 
     ConstraintLayout(
         modifier = Modifier
@@ -223,7 +121,7 @@ private fun CourseItem(
     ) {
 
 
-        val (image, title, text, price, more, moreIcon, favorite, favBlur, date, progress) = createRefs()
+        val (image, title, text, price, more, moreIcon, favorite, favBlur, date) = createRefs()
 
         Image(
             modifier = Modifier
@@ -253,28 +151,7 @@ private fun CourseItem(
         )
 
 
-        if (isLoading) {
-            CircularProgressIndicator(
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .size(35.dp)
-                    .constrainAs(progress) {
-                        top.linkTo(favorite.top)
-                        bottom.linkTo(favorite.bottom)
-                        start.linkTo(favorite.start)
-                        end.linkTo(favorite.end)
-                    }
-                    .background(CourseFavoriteLoadingBackColor)
-                    .padding(5.dp),
-                color = CourseFavoriteIconColor,
-                trackColor = Color.Transparent,
-                strokeWidth = (2).dp,
-                strokeCap = StrokeCap.Round
-            )
-        }
-
-
-        TextWithIcon(rate, modifier = Modifier
+        TextWithIcon(course.rate, modifier = Modifier
             .clip(CircleShape)
             .background(CourseFavoriteBackColor)
             .constrainAs(favBlur) {
@@ -285,7 +162,7 @@ private fun CourseItem(
 
 
         Text(
-            text = startDate.formatToDefaultDayMonthYearDate() ?: startDate,
+            text = course.startDate,
             color = Color.White,
             fontSize = 14.sp,
             fontFamily = TextUtils.robotoFont,
@@ -301,7 +178,7 @@ private fun CourseItem(
         )
 
         Text(
-            text = courseTitle,
+            text = course.title,
             color = Color.White,
             fontSize = 18.sp,
             fontFamily = TextUtils.robotoFont,
@@ -313,7 +190,7 @@ private fun CourseItem(
         )
 
         Text(
-            text = courseText,
+            text = course.text,
             color = CourseItemTextColor,
             fontSize = 15.sp,
             fontFamily = TextUtils.robotoFont,
@@ -329,7 +206,7 @@ private fun CourseItem(
         )
 
         Text(
-            text = "$coursePrice ₽",
+            text = course.price,
             color = Color.White,
             fontSize = 16.sp,
             fontFamily = TextUtils.robotoFont,
@@ -373,44 +250,4 @@ private fun CourseItem(
     }
 
     Spacer(modifier = Modifier.size(10.dp, 20.dp))
-}
-
-
-@Composable
-fun TextWithIcon(rate: String, modifier: Modifier) {
-    val modId = "modIcon"
-    val text = buildAnnotatedString {
-        appendInlineContent(modId, "[icon]")
-        append(rate)
-
-    }
-    val inlineContent = mapOf(
-        Pair(
-            modId,
-            InlineTextContent(Placeholder(18.sp, 18.sp, PlaceholderVerticalAlign.Center)) {
-                Icon(
-                    painterResource(R.drawable.ic_star_fill),
-                    "",
-                    tint = CourseMoreTextColor,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(bottom = (3).dp, top = 2.dp, end = 2.dp)
-                )
-            }
-        )
-    )
-
-    Text(
-        text = text,
-        inlineContent = inlineContent,
-        color = Color.White,
-        fontSize = 14.sp,
-        fontFamily = TextUtils.robotoFont,
-        fontWeight = FontWeight.Normal,
-        modifier = modifier
-    )
-}
-
-enum class SORT {
-    DATE, NONE
 }

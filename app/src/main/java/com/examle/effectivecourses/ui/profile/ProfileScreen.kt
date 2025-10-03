@@ -1,8 +1,5 @@
 package com.examle.effectivecourses.ui.profile
 
-import android.util.Log
-import androidx.compose.animation.core.animate
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -22,8 +19,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,11 +41,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
-import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.examle.domain.model.DataState
+import com.examle.domain.model.MyCourseModel
 import com.examle.effectivecourses.R
-import com.examle.effectivecourses.dataSource.model.MyCourseModel
 import com.examle.effectivecourses.extensions.clickable
-import com.examle.effectivecourses.ui.home.TextWithIcon
+import com.examle.effectivecourses.ui.components.ProgressDialog
+import com.examle.effectivecourses.ui.components.ShimmerItem
+import com.examle.effectivecourses.ui.components.TextWithIcon
 import com.examle.effectivecourses.ui.theme.AppBackgroundColor
 import com.examle.effectivecourses.ui.theme.BottomBarLineColor
 import com.examle.effectivecourses.ui.theme.BottomItemIndicatorColor
@@ -58,9 +57,6 @@ import com.examle.effectivecourses.ui.theme.CourseItemColor
 import com.examle.effectivecourses.ui.theme.CourseItemTextColor
 import com.examle.effectivecourses.ui.theme.CourseLessonColor
 import com.examle.effectivecourses.ui.theme.CourseMoreTextColor
-import com.examle.effectivecourses.utils.DateUtils.formatToDefaultDayMonthYearDate
-import com.examle.effectivecourses.utils.ProgressDialog
-import com.examle.effectivecourses.utils.ShimmerItem
 import com.examle.effectivecourses.utils.TextUtils
 import org.koin.androidx.compose.koinViewModel
 
@@ -71,11 +67,18 @@ fun ProfileScreen(
     onLogout : () -> Unit
 ) {
 
-    val uiState = viewModel.courses.value
+    val uiState by viewModel.courses.collectAsState()
 
-    var logoutState by remember { mutableStateOf(false) }
-    logoutState = viewModel.logoutSuccess.value
+    val isLogoutSuccess by viewModel.logoutSuccess.collectAsState()
+    LaunchedEffect(isLogoutSuccess) {
+        if (isLogoutSuccess) onLogout.invoke()
+    }
 
+    val isLoadingState by viewModel.loading.collectAsState()
+    var isLoading by remember { mutableStateOf(false) }
+    LaunchedEffect(isLoadingState) { isLoading = isLoadingState }
+
+    ProgressDialog(isLoading)
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -95,15 +98,15 @@ fun ProfileScreen(
         ProfileButtonItem("Выйти из аккаунта", 3){ viewModel.logoutProfile() }
 
         TitleItem()
-        uiState.forEach { course -> if (course == null) ShimmerItem() else CourseItem(course) }
 
-
-        DisposableEffect(logoutState) {
-            if (logoutState) onLogout.invoke()
-            onDispose { }
+        when(uiState){
+            is DataState.Error -> { }
+            is DataState.Loading -> ShimmerItem()
+            is DataState.Success -> {
+                val data = (uiState as DataState.Success<List<MyCourseModel>>).data
+                data.forEach { CourseItem(it) }
+            }
         }
-
-        ProgressDialog(viewModel.loading.value)
     }
 }
 
@@ -225,7 +228,7 @@ private fun CourseItem(course: MyCourseModel) {
 
 
         Text(
-            text = course.startDate.formatToDefaultDayMonthYearDate() ?: course.startDate,
+            text = course.startDate,
             color = Color.White,
             fontSize = 15.sp,
             fontFamily = TextUtils.robotoFont,
@@ -253,7 +256,7 @@ private fun CourseItem(course: MyCourseModel) {
         )
 
         Text(
-            text = course.percent.toString() + "%",
+            text = course.percent,
             color = CourseMoreTextColor,
             fontSize = 14.sp,
             fontFamily = TextUtils.robotoFont,

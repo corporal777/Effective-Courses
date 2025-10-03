@@ -1,6 +1,5 @@
 package com.examle.effectivecourses.ui.detail
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -23,7 +22,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,10 +46,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
+import com.examle.domain.model.CourseModel
+import com.examle.domain.model.DataState
 import com.examle.effectivecourses.R
-import com.effective.networkmodule.model.CourseModel
 import com.examle.effectivecourses.extensions.clickable
-import com.examle.effectivecourses.ui.home.TextWithIcon
+import com.examle.effectivecourses.ui.components.TextWithIcon
 import com.examle.effectivecourses.ui.theme.AppBackgroundColor
 import com.examle.effectivecourses.ui.theme.BottomBarLineColor
 import com.examle.effectivecourses.ui.theme.CourseFavoriteBackColor
@@ -58,8 +59,8 @@ import com.examle.effectivecourses.ui.theme.CourseItemColor
 import com.examle.effectivecourses.ui.theme.CourseItemTextColor
 import com.examle.effectivecourses.ui.theme.CourseLessonColor
 import com.examle.effectivecourses.ui.theme.CourseMoreTextColor
-import com.examle.effectivecourses.utils.DateUtils.formatToDefaultDayMonthYearDate
-import com.examle.effectivecourses.utils.LoadingButton
+import com.examle.effectivecourses.ui.components.LoadingButton
+import com.examle.effectivecourses.ui.components.ProgressDialog
 import com.examle.effectivecourses.utils.TextUtils
 import org.koin.androidx.compose.koinViewModel
 import kotlin.math.abs
@@ -67,18 +68,20 @@ import kotlin.math.abs
 @Composable
 fun DetailScreen(
     padding: PaddingValues,
-    courseId: String,
-    viewModel: DetailViewModel = koinViewModel(),
+    courseId : String,
+    viewModel: DetailViewModel= koinViewModel(),
     onBackClick: () -> Unit
 ) {
 
-    val uiState = viewModel.courseDetail.value
     val scrollState = rememberScrollState()
+    val uiState by viewModel.courseDetail.collectAsState()
+    LaunchedEffect(Unit) { viewModel.getCourseDetail(courseId) }
 
-    DisposableEffect(Unit) {
-        viewModel.getCourseDetail(courseId)
-        onDispose { }
-    }
+    val isLoadingState by viewModel.loading.collectAsState()
+    var isLoading by remember { mutableStateOf(false) }
+    LaunchedEffect(isLoadingState) { isLoading = isLoadingState }
+
+    ProgressDialog(isLoading)
 
     Box(
         modifier = Modifier
@@ -86,22 +89,26 @@ fun DetailScreen(
             .background(AppBackgroundColor)
     ) {
 
-        if (uiState == null) LoadingItem()
-        else {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.verticalScroll(scrollState)
-            ) {
-                HeaderItem(uiState)
-                ContentItem(uiState)
+        when(uiState){
+            is DataState.Error -> { }
+            is DataState.Loading -> LoadingItem()
+            is DataState.Success -> {
+                val data = (uiState as DataState.Success<CourseModel>).data
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.verticalScroll(scrollState)
+                ) {
+                    HeaderItem(data)
+                    ContentItem(data)
+                }
+                TopBarItem(
+                    padding.calculateTopPadding(),
+                    data,
+                    scrollState,
+                    { onBackClick.invoke() },
+                    { viewModel.addCourseFavorite(data) }
+                )
             }
-            TopBarItem(
-                padding.calculateTopPadding(),
-                uiState,
-                scrollState,
-                { onBackClick.invoke() },
-                { viewModel.addCourseFavorite(uiState) }
-            )
         }
     }
 }
@@ -121,7 +128,7 @@ private fun TopBarItem(
     val backTint = CourseFavoriteIconColor.copy(1.0f - alpha)
 
     var icon by remember { mutableStateOf(R.drawable.ic_favorite) }
-    icon = if (course.hasLike) R.drawable.ic_favorite_fill else R.drawable.ic_favorite
+    icon = if (course.isLiked) R.drawable.ic_favorite_fill else R.drawable.ic_favorite
 
     ConstraintLayout(modifier = Modifier.fillMaxWidth()) {
         val (back, fav, box, divider) = createRefs()
@@ -228,7 +235,7 @@ private fun HeaderItem(course: CourseModel) {
             .padding(start = 7.dp, end = 10.dp))
 
         Text(
-            text = course.startDate.formatToDefaultDayMonthYearDate() ?: course.startDate,
+            text = course.startDate,
             color = Color.White,
             fontSize = 14.sp,
             fontFamily = TextUtils.robotoFont,

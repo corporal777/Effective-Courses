@@ -10,7 +10,7 @@ import androidx.navigation.compose.rememberNavController
 import com.examle.effectivecourses.App
 import com.examle.effectivecourses.navigation.NavGraph
 import com.examle.effectivecourses.ui.theme.EffectiveCoursesTheme
-import com.examle.effectivecourses.utils.AppBottomBar
+import com.examle.effectivecourses.ui.components.AppBottomBar
 import org.koin.androidx.compose.KoinAndroidContext
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -28,6 +28,7 @@ class MainActivity : ComponentActivity() {
                 KoinAndroidContext { App() }
 
                 val navController = rememberNavController()
+
                 Scaffold(bottomBar = { AppBottomBar(navController) }) { padding ->
                     NavGraph(navController, padding)
                 }
@@ -36,6 +37,8 @@ class MainActivity : ComponentActivity() {
         }
 
     }
+
+
 
     private fun showSplashScreen() {
         installSplashScreen().apply {

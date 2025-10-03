@@ -2,45 +2,53 @@ package com.examle.effectivecourses.ui.favorite
 
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
-import com.effective.networkmodule.model.CourseModel
-import com.examle.effectivecourses.dataSource.data.AppData
-import com.examle.effectivecourses.di.repository.FavoriteRepository
-import com.examle.effectivecourses.extensions.call
-import com.examle.effectivecourses.extensions.performOnBackgroundOutOnMain
-import com.examle.effectivecourses.extensions.withDelay
+import androidx.lifecycle.viewModelScope
+import com.examle.domain.model.CourseModel
+import com.examle.domain.repository.FavoriteRepository
+import com.examle.data.data.AppData
+import com.examle.domain.interactor.FavoriteInteractor
+import com.examle.domain.model.DataState
 import com.examle.effectivecourses.ui.base.BaseViewModel
-import io.reactivex.rxkotlin.subscribeBy
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 class FavoriteViewModel(
-    private val repository: FavoriteRepository,
-    private val appData: AppData
+    private val interactor: FavoriteInteractor
 ) : BaseViewModel() {
 
-    private val _courses = mutableStateOf<List<CourseModel?>>(List(2) { null })
-    val courses: State<List<CourseModel?>> = _courses
+    private val _courses = MutableStateFlow<DataState<List<CourseModel>>>(DataState.Loading)
+    val courses: StateFlow<DataState<List<CourseModel>>> = _courses.asStateFlow()
 
     init {
-        repository.getFavoriteCourses()
-            .withDelay(300)
-            .performOnBackgroundOutOnMain()
-            .subscribeBy(
-                onError = { it.printStackTrace() },
-                onSuccess = { _courses.value = it }
-            ).call(compositeDisposable)
+        getFavoriteCourses(true)
+    }
+
+    private fun getFavoriteCourses(withDelay : Boolean) {
+        viewModelScope.launch {
+            if (withDelay) delay(1000)
+            interactor.getFavoriteCourses()
+                .fold(
+                    onSuccess = { _courses.emit(DataState.Success(it)) },
+                    onFailure = { _courses.emit(DataState.Error) }
+                )
+        }
+
+
     }
 
     fun removeFavoriteCourse(model: CourseModel) {
-        repository.removeCourseFavorite(model)
-            .doOnSuccess { appData.setCourseChanged(model.copy(hasLike = it.isFavorite)) }
-            .flatMap { repository.getFavoriteCourses() }
-            .withDelay(300)
-            .performOnBackgroundOutOnMain()
-            .withButtonLoading(model.id)
-            .subscribeBy(
-                onError = { it.printStackTrace() },
-                onSuccess = { _courses.value = it }
-            ).call(compositeDisposable)
+        viewModelScope.launch {
+            interactor.removeCourseFavourite(model)
+                .withProgressLoading()
+                .catch { it.printStackTrace() }
+                .collectLatest {
+                    getFavoriteCourses(false)
+                }
+        }
     }
-
-
 }

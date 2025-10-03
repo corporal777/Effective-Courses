@@ -1,6 +1,5 @@
 package com.examle.effectivecourses.ui.login
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -8,32 +7,26 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.InlineTextContent
-import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.Placeholder
-import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -44,7 +37,6 @@ import com.examle.effectivecourses.R
 import com.examle.effectivecourses.extensions.clickable
 import com.examle.effectivecourses.extensions.showCustomTabsBrowser
 import com.examle.effectivecourses.extensions.verticalGradientBrush
-import com.examle.effectivecourses.ui.home.HomeViewModel
 import com.examle.effectivecourses.ui.theme.AppBackgroundColor
 import com.examle.effectivecourses.ui.theme.BottomBarLineColor
 import com.examle.effectivecourses.ui.theme.CourseItemTextColor
@@ -52,9 +44,9 @@ import com.examle.effectivecourses.ui.theme.CourseMoreTextColor
 import com.examle.effectivecourses.ui.theme.OdnoklassnikiColorBottom
 import com.examle.effectivecourses.ui.theme.OdnoklassnikiColorTop
 import com.examle.effectivecourses.ui.theme.VkColor
-import com.examle.effectivecourses.utils.AppPasswordTextField
-import com.examle.effectivecourses.utils.AppTextFieldSmall
-import com.examle.effectivecourses.utils.LoadingButton
+import com.examle.effectivecourses.ui.components.AppPasswordTextField
+import com.examle.effectivecourses.ui.components.AppTextFieldSmall
+import com.examle.effectivecourses.ui.components.LoadingButton
 import com.examle.effectivecourses.utils.TextUtils
 import org.koin.androidx.compose.koinViewModel
 
@@ -64,6 +56,11 @@ fun LoginScreen(
     viewModel: LoginViewModel = koinViewModel(),
     onLoginClick: () -> Unit
 ) {
+
+    val isLoginSuccess by viewModel.isLoginSuccess.collectAsState()
+    LaunchedEffect(isLoginSuccess) {
+        if (isLoginSuccess) onLoginClick.invoke()
+    }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -77,8 +74,6 @@ fun LoginScreen(
         ContentItem(viewModel)
         ActionsItem(viewModel)
     }
-
-    viewModel.onLoginSuccess = { onLoginClick.invoke() }
 }
 
 @Composable
@@ -138,8 +133,8 @@ private fun ContentItem(viewModel: LoginViewModel) {
 
 @Composable
 fun ActionsItem(viewModel: LoginViewModel) {
-    val isEnabled by viewModel.buttonEnabled
-    val isLoading by viewModel.loading
+    val isEnabled by viewModel.buttonEnabled.collectAsState()
+    val isLoading by viewModel.buttonLoading.collectAsState()
 
     LoadingButton(
         text = "Вход",

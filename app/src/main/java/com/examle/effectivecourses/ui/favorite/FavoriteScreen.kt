@@ -18,6 +18,8 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,18 +39,20 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
+import com.examle.common.DateUtils.formatToDefaultDayMonthYearDate
+import com.examle.domain.model.CourseModel
+import com.examle.domain.model.DataState
 import com.examle.effectivecourses.R
-import com.effective.networkmodule.model.CourseModel
 import com.examle.effectivecourses.extensions.clickable
-import com.examle.effectivecourses.ui.home.TextWithIcon
+import com.examle.effectivecourses.ui.components.ProgressDialog
+import com.examle.effectivecourses.ui.components.TextWithIcon
 import com.examle.effectivecourses.ui.theme.AppBackgroundColor
 import com.examle.effectivecourses.ui.theme.CourseFavoriteBackColor
 import com.examle.effectivecourses.ui.theme.CourseFavoriteIconColor
 import com.examle.effectivecourses.ui.theme.CourseItemColor
 import com.examle.effectivecourses.ui.theme.CourseItemTextColor
 import com.examle.effectivecourses.ui.theme.CourseMoreTextColor
-import com.examle.effectivecourses.utils.DateUtils.formatToDefaultDayMonthYearDate
-import com.examle.effectivecourses.utils.ShimmerItem
+import com.examle.effectivecourses.ui.components.ShimmerItem
 import com.examle.effectivecourses.utils.TextUtils
 import org.koin.androidx.compose.koinViewModel
 
@@ -59,7 +63,13 @@ fun FavoriteScreen(
     onItemClick: (id: String) -> Unit
 ) {
 
-    val uiState = viewModel.courses.value
+    val uiState by viewModel.courses.collectAsState()
+
+    val isLoadingState by viewModel.loading.collectAsState()
+    var isLoading by remember { mutableStateOf(false) }
+    LaunchedEffect(isLoadingState) { isLoading = isLoadingState }
+
+    ProgressDialog(isLoading)
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -72,9 +82,14 @@ fun FavoriteScreen(
 
         HeaderItem()
 
-        uiState.forEach { course ->
-            if (course == null) ShimmerItem()
-            else CourseItem(viewModel, course) { viewModel.removeFavoriteCourse(it) }
+        when (uiState) {
+            DataState.Error -> {}
+            DataState.Loading -> ShimmerItem()
+            else -> {
+                (uiState as DataState.Success<List<CourseModel>>).data.forEach { course ->
+                    CourseItem(course) { viewModel.removeFavoriteCourse(it) }
+                }
+            }
         }
     }
 }
@@ -97,32 +112,12 @@ private fun HeaderItem() {
 
 @Composable
 private fun CourseItem(
-    viewModel: FavoriteViewModel,
     course: CourseModel,
     onFavoriteClick: (model: CourseModel) -> Unit
 ) {
 
-    var rate by remember { mutableStateOf("") }
-    rate = course.rate
-
-    var startDate by remember { mutableStateOf("") }
-    startDate = course.startDate
-
-    var courseTitle by remember { mutableStateOf("") }
-    courseTitle = course.title
-
-    var courseText by remember { mutableStateOf("") }
-    courseText = course.text
-
-    var coursePrice by remember { mutableStateOf("") }
-    coursePrice = course.price
-
-    val buttonState by viewModel.buttonLoading
-    var isLoading by rememberSaveable { mutableStateOf(false) }
-    isLoading = if (buttonState.first.toString() == course.id) buttonState.second else false
-
     var isLiked by rememberSaveable { mutableStateOf(false) }
-    isLiked = course.hasLike
+    isLiked = course.isLiked
 
     ConstraintLayout(
         modifier = Modifier
@@ -156,30 +151,11 @@ private fun CourseItem(
                     top.linkTo(image.top, 10.dp)
                     end.linkTo(image.end, 10.dp)
                 }
-                .clickable(Color.White, enabled = !isLoading) { onFavoriteClick.invoke(course) }
+                .clickable(Color.White) { onFavoriteClick.invoke(course) }
                 .padding(8.dp)
-                .alpha(if (isLoading) 0f  else 1f)
         )
 
-        if (isLoading){
-            CircularProgressIndicator(
-                modifier = Modifier
-                    .size(35.dp)
-                    .constrainAs(progress) {
-                        top.linkTo(favorite.top)
-                        bottom.linkTo(favorite.bottom)
-                        start.linkTo(favorite.start)
-                        end.linkTo(favorite.end)
-                    }.padding(5.dp),
-                color = CourseFavoriteIconColor,
-                trackColor = Color.Transparent,
-                strokeWidth = (2).dp,
-                strokeCap = StrokeCap.Round
-            )
-        }
-
-
-        TextWithIcon(rate, modifier = Modifier
+        TextWithIcon(course.rate, modifier = Modifier
             .clip(CircleShape)
             .background(CourseFavoriteBackColor)
             .constrainAs(favBlur) {
@@ -190,7 +166,7 @@ private fun CourseItem(
 
 
         Text(
-            text = startDate.formatToDefaultDayMonthYearDate() ?: startDate,
+            text = course.startDate,
             color = Color.White,
             fontSize = 14.sp,
             fontFamily = TextUtils.robotoFont,
@@ -206,7 +182,7 @@ private fun CourseItem(
         )
 
         Text(
-            text = courseTitle,
+            text = course.title,
             color = Color.White,
             fontSize = 18.sp,
             fontFamily = TextUtils.robotoFont,
@@ -218,7 +194,7 @@ private fun CourseItem(
         )
 
         Text(
-            text = courseText,
+            text = course.text,
             color = CourseItemTextColor,
             fontSize = 15.sp,
             fontFamily = TextUtils.robotoFont,
@@ -234,7 +210,7 @@ private fun CourseItem(
         )
 
         Text(
-            text = "$coursePrice ₽",
+            text = course.price,
             color = Color.White,
             fontSize = 16.sp,
             fontFamily = TextUtils.robotoFont,

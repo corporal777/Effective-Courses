@@ -1,57 +1,45 @@
 package com.examle.effectivecourses.ui.detail
 
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.viewModelScope
-import com.effective.networkmodule.model.CourseModel
-import com.examle.effectivecourses.dataSource.data.AppData
-import com.examle.effectivecourses.di.repository.CoursesRepository
-import com.examle.effectivecourses.extensions.call
-import com.examle.effectivecourses.extensions.performOnBackgroundOutOnMain
+import com.examle.domain.interactor.CourseDetailInteractor
+import com.examle.domain.model.CourseModel
+import com.examle.domain.model.DataState
 import com.examle.effectivecourses.ui.base.BaseViewModel
-import io.reactivex.Maybe
-import io.reactivex.rxkotlin.subscribeBy
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.flatMap
-import kotlinx.coroutines.flow.flatMapConcat
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 
 class DetailViewModel(
-    private val repository: CoursesRepository,
-    private val appData: AppData
+    private val interactor: CourseDetailInteractor
 ) : BaseViewModel() {
 
-    private val _courseDetail = mutableStateOf<CourseModel?>(null)
-    val courseDetail: State<CourseModel?> = _courseDetail
+    private val _courseDetail = MutableStateFlow<DataState<CourseModel>>(DataState.Loading)
+    val courseDetail: StateFlow<DataState<CourseModel>> = _courseDetail.asStateFlow()
 
 
     fun getCourseDetail(id: String) {
-        repository.getCourseById(id)
-            .performOnBackgroundOutOnMain()
-            .subscribeBy(
-                onError = { it.printStackTrace() },
-                onSuccess = { _courseDetail.value = it }
-            ).call(compositeDisposable)
+        viewModelScope.launch {
+            interactor.getCourseById(id)
+                .fold(
+                    onSuccess = { _courseDetail.emit(DataState.Success(it)) },
+                    onFailure = { _courseDetail.emit(DataState.Error) }
+                )
+        }
     }
 
 
     fun addCourseFavorite(model: CourseModel) {
-        Maybe.defer {
-            if (model.hasLike) repository.removeCourseFavorite(model)
-            else repository.addCourseFavorite(model)
+        viewModelScope.launch {
+            interactor.addOrRemoveCourseFavourite(model)
+                .withProgressLoading()
+                .catch { it.printStackTrace() }
+                .collectLatest {
+                    _courseDetail.emit(DataState.Success(it))
+                }
         }
-            .map { model.copy(hasLike = it.isFavorite) }
-            .doOnSuccess { appData.setCourseChanged(it) }
-            .performOnBackgroundOutOnMain()
-            .subscribeBy(
-                onError = { it.printStackTrace() },
-                onSuccess = { _courseDetail.value = it }
-            ).call(compositeDisposable)
     }
 
 }

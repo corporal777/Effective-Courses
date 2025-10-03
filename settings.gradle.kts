@@ -22,5 +22,6 @@ dependencyResolutionManagement {
 
 rootProject.name = "EffectiveCourses"
 include(":app")
-include(":networkModule")
-include(":localDataModule")
+include(":domain")
+include(":data")
+include(":common")
