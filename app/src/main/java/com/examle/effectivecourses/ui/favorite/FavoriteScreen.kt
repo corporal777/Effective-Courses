@@ -44,6 +44,7 @@ import com.examle.domain.model.CourseModel
 import com.examle.domain.model.DataState
 import com.examle.effectivecourses.R
 import com.examle.effectivecourses.extensions.clickable
+import com.examle.effectivecourses.ui.components.CourseItem
 import com.examle.effectivecourses.ui.components.ProgressDialog
 import com.examle.effectivecourses.ui.components.TextWithIcon
 import com.examle.effectivecourses.ui.theme.AppBackgroundColor
@@ -53,23 +54,17 @@ import com.examle.effectivecourses.ui.theme.CourseItemColor
 import com.examle.effectivecourses.ui.theme.CourseItemTextColor
 import com.examle.effectivecourses.ui.theme.CourseMoreTextColor
 import com.examle.effectivecourses.ui.components.ShimmerItem
+import com.examle.effectivecourses.ui.components.TextSemibold
 import com.examle.effectivecourses.utils.TextUtils
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun FavoriteScreen(
     padding: PaddingValues,
-    viewModel: FavoriteViewModel = koinViewModel(),
-    onItemClick: (id: String) -> Unit
+    viewModel: FavoriteViewModel = koinViewModel()
 ) {
 
     val uiState by viewModel.courses.collectAsState()
-
-    val isLoadingState by viewModel.loading.collectAsState()
-    var isLoading by remember { mutableStateOf(false) }
-    LaunchedEffect(isLoadingState) { isLoading = isLoadingState }
-
-    ProgressDialog(isLoading)
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -87,7 +82,11 @@ fun FavoriteScreen(
             DataState.Loading -> ShimmerItem()
             else -> {
                 (uiState as DataState.Success<List<CourseModel>>).data.forEach { course ->
-                    CourseItem(course) { viewModel.removeFavoriteCourse(it) }
+                    CourseItem(
+                        course,
+                        onFavoriteClick = { viewModel.removeFavoriteCourse(it) },
+                        onItemClick = { }
+                    )
                 }
             }
         }
@@ -97,160 +96,12 @@ fun FavoriteScreen(
 
 @Composable
 private fun HeaderItem() {
-    Text(
+    TextSemibold(
         modifier = Modifier.fillMaxWidth(),
         text = "Избранное",
         color = CourseItemTextColor,
         fontSize = 23.sp,
-        fontFamily = TextUtils.robotoFont,
-        fontWeight = FontWeight.SemiBold,
         textAlign = TextAlign.Start
     )
-
-    Spacer(modifier = Modifier.size(10.dp, 20.dp))
-}
-
-@Composable
-private fun CourseItem(
-    course: CourseModel,
-    onFavoriteClick: (model: CourseModel) -> Unit
-) {
-
-    var isLiked by rememberSaveable { mutableStateOf(false) }
-    isLiked = course.isLiked
-
-    ConstraintLayout(
-        modifier = Modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(CourseItemColor)
-            .clickable(Color.White) { }
-            .padding(bottom = 15.dp)
-    ) {
-        val (image, title, text, price, more, moreIcon, favorite, favBlur, date, progress) = createRefs()
-
-        Image(
-            modifier = Modifier
-                .clip(RoundedCornerShape(15.dp))
-                .fillMaxWidth()
-                .height(130.dp)
-                .constrainAs(image) { top.linkTo(parent.top) },
-            painter = painterResource(R.drawable.pic1),
-            contentDescription = "",
-            contentScale = ContentScale.FillBounds,
-        )
-
-        Icon(
-            painter = painterResource(if (isLiked) R.drawable.ic_favorite_fill else R.drawable.ic_favorite),
-            contentDescription = "",
-            tint = if (isLiked) CourseMoreTextColor else CourseFavoriteIconColor,
-            modifier = Modifier
-                .clip(CircleShape)
-                .size(35.dp)
-                .background(CourseFavoriteBackColor)
-                .constrainAs(favorite) {
-                    top.linkTo(image.top, 10.dp)
-                    end.linkTo(image.end, 10.dp)
-                }
-                .clickable(Color.White) { onFavoriteClick.invoke(course) }
-                .padding(8.dp)
-        )
-
-        TextWithIcon(course.rate, modifier = Modifier
-            .clip(CircleShape)
-            .background(CourseFavoriteBackColor)
-            .constrainAs(favBlur) {
-                start.linkTo(image.start, 10.dp)
-                bottom.linkTo(image.bottom, 10.dp)
-            }
-            .padding(start = 7.dp, end = 10.dp))
-
-
-        Text(
-            text = course.startDate,
-            color = Color.White,
-            fontSize = 14.sp,
-            fontFamily = TextUtils.robotoFont,
-            fontWeight = FontWeight.Normal,
-            modifier = Modifier
-                .clip(CircleShape)
-                .background(CourseFavoriteBackColor)
-                .constrainAs(date) {
-                    start.linkTo(favBlur.end, 10.dp)
-                    top.linkTo(favBlur.top)
-                }
-                .padding(horizontal = 10.dp)
-        )
-
-        Text(
-            text = course.title,
-            color = Color.White,
-            fontSize = 18.sp,
-            fontFamily = TextUtils.robotoFont,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 12.dp, start = 15.dp, end = 15.dp)
-                .constrainAs(title) { top.linkTo(image.bottom) }
-        )
-
-        Text(
-            text = course.text,
-            color = CourseItemTextColor,
-            fontSize = 15.sp,
-            fontFamily = TextUtils.robotoFont,
-            fontWeight = FontWeight.Normal,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            lineHeight = 20.sp,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp, start = 15.dp, end = 15.dp)
-                .alpha(0.7f)
-                .constrainAs(text) { top.linkTo(title.bottom) }
-        )
-
-        Text(
-            text = course.price,
-            color = Color.White,
-            fontSize = 16.sp,
-            fontFamily = TextUtils.robotoFont,
-            fontWeight = FontWeight.Medium,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            lineHeight = 20.sp,
-            modifier = Modifier
-                .padding(top = 8.dp, start = 15.dp)
-                .constrainAs(price) {
-                    start.linkTo(parent.start)
-                    top.linkTo(text.bottom)
-                }
-        )
-
-        Text(
-            text = "Подробнее",
-            color = CourseMoreTextColor,
-            fontSize = 15.sp,
-            fontFamily = TextUtils.robotoFont,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            lineHeight = 20.sp,
-            modifier = Modifier
-                .constrainAs(more) {
-                    end.linkTo(moreIcon.start, 5.dp)
-                    baseline.linkTo(price.baseline)
-                }
-        )
-        Icon(
-            painter = painterResource(R.drawable.ic_more_arrow),
-            contentDescription = "",
-            tint = CourseMoreTextColor,
-            modifier = Modifier.constrainAs(moreIcon) {
-                end.linkTo(parent.end, 15.dp)
-                top.linkTo(more.top)
-                bottom.linkTo(more.bottom)
-            })
-    }
-
     Spacer(modifier = Modifier.size(10.dp, 20.dp))
 }

@@ -47,6 +47,9 @@ import com.examle.effectivecourses.ui.theme.VkColor
 import com.examle.effectivecourses.ui.components.AppPasswordTextField
 import com.examle.effectivecourses.ui.components.AppTextFieldSmall
 import com.examle.effectivecourses.ui.components.LoadingButton
+import com.examle.effectivecourses.ui.components.TextSemibold
+import com.examle.effectivecourses.ui.login.components.ActionsItem
+import com.examle.effectivecourses.ui.login.components.ContentItem
 import com.examle.effectivecourses.utils.TextUtils
 import org.koin.androidx.compose.koinViewModel
 
@@ -76,139 +79,5 @@ fun LoginScreen(
     }
 }
 
-@Composable
-private fun ContentItem(viewModel: LoginViewModel) {
-    Text(
-        modifier = Modifier.fillMaxWidth(),
-        text = "Вход",
-        color = CourseItemTextColor,
-        fontSize = 27.sp,
-        fontFamily = TextUtils.robotoFont,
-        fontWeight = FontWeight.SemiBold,
-        textAlign = TextAlign.Start
-    )
-
-    Spacer(modifier = Modifier.size(10.dp, 30.dp))
-
-    Text(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 5.dp),
-        text = "Email",
-        color = CourseItemTextColor,
-        fontSize = 17.sp,
-        fontFamily = TextUtils.robotoFont,
-        fontWeight = FontWeight.Medium,
-        textAlign = TextAlign.Start
-    )
-
-    AppTextFieldSmall(
-        hint = "example@gmail.com",
-        modifier = Modifier
-            .height(50.dp)
-            .fillMaxWidth()
-    ) { viewModel.changeEmail(it) }
-
-    Text(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 15.dp, bottom = 5.dp),
-        text = "Пароль",
-        color = CourseItemTextColor,
-        fontSize = 17.sp,
-        fontFamily = TextUtils.robotoFont,
-        fontWeight = FontWeight.Medium,
-        textAlign = TextAlign.Start
-    )
-
-    AppPasswordTextField(
-        hint = "Введите пароль",
-        modifier = Modifier
-            .height(50.dp)
-            .fillMaxWidth()
-    ) { viewModel.changePassword(it) }
-
-    Spacer(modifier = Modifier.size(10.dp, 30.dp))
-}
-
-@Composable
-fun ActionsItem(viewModel: LoginViewModel) {
-    val isEnabled by viewModel.buttonEnabled.collectAsState()
-    val isLoading by viewModel.buttonLoading.collectAsState()
-
-    LoadingButton(
-        text = "Вход",
-        backColor = CourseMoreTextColor,
-        loading = isLoading,
-        enabled = isEnabled
-    ) {
-        viewModel.loginProfile()
-    }
-
-    val text = buildAnnotatedString {
-        append(AnnotatedString("Нету аккаунта?", spanStyle = SpanStyle(CourseItemTextColor)))
-        append(AnnotatedString(" Регистрация ", spanStyle = SpanStyle(CourseMoreTextColor)))
-        append(AnnotatedString("\nЗабыл пароль", spanStyle = SpanStyle(CourseMoreTextColor)))
-    }
-
-    Text(
-        text = text,
-        color = Color.White,
-        fontSize = 14.sp,
-        fontFamily = TextUtils.robotoFont,
-        fontWeight = FontWeight.Medium,
-        textAlign = TextAlign.Center,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 20.dp)
-    )
 
 
-    Spacer(modifier = Modifier.size(10.dp, 30.dp))
-
-    HorizontalDivider(
-        color = BottomBarLineColor,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(3.dp)
-            .padding(bottom = 20.dp)
-    )
-
-    Spacer(modifier = Modifier.size(10.dp, 30.dp))
-
-    val context = LocalContext.current
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(15.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .clip(CircleShape)
-                .height(40.dp)
-                .background(VkColor)
-                .clickable(Color.White) { showCustomTabsBrowser(context, "https://vk.com/") }
-                .weight(1f),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(painterResource(R.drawable.ic_vk), "vk")
-        }
-
-
-        Box(
-            modifier = Modifier
-                .clip(CircleShape)
-                .height(40.dp)
-                .background(
-                    verticalGradientBrush(listOf(OdnoklassnikiColorTop, OdnoklassnikiColorBottom))
-                )
-                .clickable(Color.White) {
-                    showCustomTabsBrowser(context, "https://ok.ru/")
-                }
-                .weight(1f),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(painterResource(R.drawable.ic_odnoklassniki), "odnoklassniki")
-        }
-    }
-}

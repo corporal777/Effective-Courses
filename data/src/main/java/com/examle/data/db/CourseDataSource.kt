@@ -9,9 +9,8 @@ import kotlinx.coroutines.withContext
 
 class CourseDataSource(private val courseDao: CourseDao, ) {
 
-    suspend fun addCourse(model: CourseModel): Boolean {
+    suspend fun addCourse(dbo: CourseDbo): Boolean {
         return withContext(Dispatchers.IO){
-            val dbo = model.mapToDboFromCourseModel()
             courseDao.insert(dbo) > 0
         }
     }

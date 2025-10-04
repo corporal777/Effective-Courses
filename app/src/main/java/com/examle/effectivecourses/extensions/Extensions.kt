@@ -18,6 +18,8 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.LocalIndication
@@ -46,17 +48,25 @@ import androidx.navigation.Navigator
 import androidx.navigation.compose.composable
 import com.examle.effectivecourses.R
 import com.examle.effectivecourses.ui.theme.PurpleGrey40
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
-inline fun <T> Iterable<T>.findItem(predicate: (T) -> Boolean): Pair<Int, T?> {
-    for ((index, item) in this.withIndex()) {
-        if (predicate(item))
-            return Pair(index, item)
+fun <T> Flow<T>.toMutableStateFlow(
+    scope: CoroutineScope,
+    initialValue: T
+): MutableStateFlow<T> {
+    val mutableStateFlow = MutableStateFlow(initialValue) // Initialize with current value
+    scope.launch {
+        collect { value ->
+            mutableStateFlow.value = value
+        }
     }
-    return Pair(-1, null)
-}
-
-fun horizontalGradientBrush(colors: List<Color>): Brush {
-    return Brush.horizontalGradient(colors)
+    return mutableStateFlow
 }
 
 fun verticalGradientBrush(colors: List<Color>): Brush {
@@ -73,41 +83,26 @@ fun NavGraphBuilder.animComposable(
         arguments = arguments,
         enterTransition = enterTransition,
         popExitTransition = popExitTransition,
-        //exitTransition = exitTransition,
         exitTransition = null,
-        //popEnterTransition = popEnterTransition,
         popEnterTransition = null,
         content = content
     )
 }
 
 val enterTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
-    slideInHorizontally(
-        initialOffsetX = { (it / 7.5).toInt() },
-        animationSpec = tween(durationMillis = 280, easing = LinearOutSlowInEasing)
-    ) + fadeIn(animationSpec = tween(250))
+    scaleIn(
+        initialScale = 0.92f,
+        animationSpec = tween(durationMillis = 300, easing = LinearOutSlowInEasing)
+    ) + fadeIn(animationSpec = tween(230))
 }
 
 val popExitTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
-    slideOutHorizontally(
-        targetOffsetX = { (it / 7.5).toInt() },
-        animationSpec = tween(durationMillis = 280, easing = LinearOutSlowInEasing)
-    ) + fadeOut(animationSpec = tween(250))
-}
-
-val exitTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
-    slideOutHorizontally(
-        targetOffsetX = { (-it / 7).toInt() },
-        animationSpec = tween(durationMillis = 400, easing = LinearOutSlowInEasing)
-    ) + fadeOut(animationSpec = tween(300, easing = LinearOutSlowInEasing))
-}
-
-val popEnterTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
-    slideInHorizontally(
-        initialOffsetX = { -it / 5 },
+    scaleOut(
+        targetScale = 0.9f,
         animationSpec = tween(durationMillis = 300, easing = LinearOutSlowInEasing)
-    ) + fadeIn(animationSpec = tween(280, easing = LinearOutSlowInEasing))
+    ) + fadeOut(animationSpec = tween(200))
 }
+
 
 fun Modifier.clickable(
     rippleColor: Color? = null,
@@ -206,15 +201,6 @@ fun Modifier.shimmerLoading(
                 end = Offset(x = translateAnimation + 100f, y = translateAnimation + 100f),
             )
         )
-    }
-}
-
-
-@Composable
-fun DisposableAction(key: Any, onDispose: ((dispose : Boolean) -> Unit?)? = null, onChanged: () -> Unit){
-    DisposableEffect(key) {
-        onChanged.invoke()
-        onDispose { onDispose?.invoke(true) }
     }
 }
 

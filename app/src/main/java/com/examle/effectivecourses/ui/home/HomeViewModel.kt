@@ -4,20 +4,31 @@ import androidx.lifecycle.viewModelScope
 import com.examle.domain.interactor.CourseInteractor
 import com.examle.domain.model.CourseModel
 import com.examle.domain.model.DataState
+import com.examle.effectivecourses.extensions.toMutableStateFlow
 import com.examle.effectivecourses.ui.base.BaseViewModel
+import com.examle.effectivecourses.ui.base.UIData
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class HomeViewModel(
-    private val interactor: CourseInteractor
-) : BaseViewModel() {
+    uiData: UIData,
+    private val interactor: CourseInteractor,
+) : BaseViewModel(uiData) {
 
     private val refreshListener = MutableSharedFlow<StateTriggers>()
 
@@ -35,10 +46,9 @@ class HomeViewModel(
         .distinctUntilChanged()
         .stateIn(
             viewModelScope,
-            SharingStarted.WhileSubscribed(5_000),
+            SharingStarted.WhileSubscribed(3_000),
             DataState.Loading
         )
-
 
     fun sortCoursesByDate(isSorted: Boolean) {
         viewModelScope.launch {
@@ -58,7 +68,6 @@ class HomeViewModel(
                     refreshListener.emit(StateTriggers.Update)
                 }
         }
-
     }
 }
 

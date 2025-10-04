@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
 class CourseDetailInteractor(
@@ -30,12 +31,9 @@ class CourseDetailInteractor(
             val result = if (!model.isLiked) favoriteRepository.addCourseFavorite(model)
             else favoriteRepository.removeCourseFavorite(model)
             emit(result)
-        }.flatMapConcat { favorite ->
-
+        }.map { favorite ->
             delay(500)
-            flowOf(model.copy(isLiked = favorite.isFavorite))
+            model.copy(isLiked = favorite.isFavorite)
         }
     }
-
-
 }

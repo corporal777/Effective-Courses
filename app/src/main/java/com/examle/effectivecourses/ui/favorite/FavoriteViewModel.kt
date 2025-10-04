@@ -9,6 +9,7 @@ import com.examle.data.data.AppData
 import com.examle.domain.interactor.FavoriteInteractor
 import com.examle.domain.model.DataState
 import com.examle.effectivecourses.ui.base.BaseViewModel
+import com.examle.effectivecourses.ui.base.UIData
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,8 +19,9 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 class FavoriteViewModel(
+    uiData: UIData,
     private val interactor: FavoriteInteractor
-) : BaseViewModel() {
+) : BaseViewModel(uiData) {
 
     private val _courses = MutableStateFlow<DataState<List<CourseModel>>>(DataState.Loading)
     val courses: StateFlow<DataState<List<CourseModel>>> = _courses.asStateFlow()
@@ -37,8 +39,6 @@ class FavoriteViewModel(
                     onFailure = { _courses.emit(DataState.Error) }
                 )
         }
-
-
     }
 
     fun removeFavoriteCourse(model: CourseModel) {

@@ -20,6 +20,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navOptions
 import com.examle.data.data.AppData
+import com.examle.effectivecourses.extensions.animComposable
 import com.examle.effectivecourses.ui.detail.DetailScreen
 import com.examle.effectivecourses.ui.favorite.FavoriteScreen
 import com.examle.effectivecourses.ui.home.HomeScreen
@@ -39,7 +40,7 @@ fun NavGraph(navController: NavHostController, paddingValues: PaddingValues) {
         enterTransition = { EnterTransition.None },
         exitTransition = { ExitTransition.None }
     ) {
-        fadeAnimComposable(route = "login") {
+        animComposable(route = "login") {
             LoginScreen(paddingValues) {
                 navController.navigate("home", navOptions {
                     popUpTo("login") { inclusive = true }
@@ -47,11 +48,11 @@ fun NavGraph(navController: NavHostController, paddingValues: PaddingValues) {
             }
         }
 
-        fadeAnimComposable(route = "home") {
+        animComposable(route = "home") {
             HomeScreen(paddingValues) { navController.navigate("detail/$it") }
         }
 
-        fadeAnimComposable(route = "detail/{courseId}") { stack ->
+        animComposable(route = "detail/{courseId}") { stack ->
             val courseId = stack.arguments?.getString("courseId") ?: "0"
             DetailScreen(paddingValues, courseId) {
                 navController.navigateUp()
@@ -59,11 +60,11 @@ fun NavGraph(navController: NavHostController, paddingValues: PaddingValues) {
 
         }
 
-        fadeAnimComposable(route = "favorite") {
-            FavoriteScreen(paddingValues) { }
+        animComposable(route = "favorite") {
+            FavoriteScreen(paddingValues)
         }
 
-        fadeAnimComposable(route = "profile") {
+        animComposable(route = "profile") {
             ProfileScreen(paddingValues) {
                 navController.navigate("login", navOptions {
                     popUpTo("home") { inclusive = true }
@@ -71,22 +72,6 @@ fun NavGraph(navController: NavHostController, paddingValues: PaddingValues) {
             }
         }
     }
-}
-
-private fun NavGraphBuilder.fadeAnimComposable(
-    route: String,
-    arguments: List<NamedNavArgument> = emptyList(),
-    content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit
-) {
-    composable(
-        route = route,
-        arguments = arguments,
-        enterTransition = { fadeIn(animationSpec = tween(350, easing = LinearOutSlowInEasing)) },
-        exitTransition = { fadeOut(animationSpec = tween(350, easing = LinearOutSlowInEasing)) },
-        popExitTransition = { fadeOut(animationSpec = tween(350, easing = LinearOutSlowInEasing)) },
-        popEnterTransition = { fadeIn(animationSpec = tween(350, easing = LinearOutSlowInEasing)) },
-        content = content
-    )
 }
 
 

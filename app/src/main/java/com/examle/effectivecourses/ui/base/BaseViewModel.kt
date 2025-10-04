@@ -9,13 +9,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
 
-abstract class BaseViewModel : ViewModel() {
+abstract class BaseViewModel(private val uiData: UIData) : ViewModel() {
 
     private val _buttonLoading = MutableStateFlow<Boolean>(false)
     val buttonLoading: StateFlow<Boolean> = _buttonLoading
-
-    private val _loading = MutableStateFlow<Boolean>(false)
-    val loading: StateFlow<Boolean> = _loading
 
 
     fun <T> Flow<T>.withButtonLoading(): Flow<T> {
@@ -26,7 +23,7 @@ abstract class BaseViewModel : ViewModel() {
 
     fun <T> Flow<T>.withProgressLoading(): Flow<T> {
         return this
-            .onStart { _loading.value = true }
-            .onCompletion { _loading.value = false }
+            .onStart { uiData._loading.value = true }
+            .onCompletion { uiData._loading.value = false }
     }
 }

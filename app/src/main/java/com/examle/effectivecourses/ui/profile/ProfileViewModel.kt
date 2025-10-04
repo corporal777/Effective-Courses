@@ -9,6 +9,7 @@ import com.examle.domain.model.DataState
 import com.examle.domain.model.MyCourseModel
 import com.examle.domain.repository.CoursesRepository
 import com.examle.effectivecourses.ui.base.BaseViewModel
+import com.examle.effectivecourses.ui.base.UIData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,8 +18,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class ProfileViewModel(
+    uiData: UIData,
     private val interactor: MyCoursesInteractor
-) : BaseViewModel() {
+) : BaseViewModel(uiData) {
 
     private val _courses = MutableStateFlow<DataState<List<MyCourseModel>>>(DataState.Loading)
     val courses: StateFlow<DataState<List<MyCourseModel>>> = _courses.asStateFlow()

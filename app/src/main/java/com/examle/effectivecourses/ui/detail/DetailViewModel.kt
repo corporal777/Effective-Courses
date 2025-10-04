@@ -5,6 +5,7 @@ import com.examle.domain.interactor.CourseDetailInteractor
 import com.examle.domain.model.CourseModel
 import com.examle.domain.model.DataState
 import com.examle.effectivecourses.ui.base.BaseViewModel
+import com.examle.effectivecourses.ui.base.UIData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,8 +14,9 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 class DetailViewModel(
+    uiData: UIData,
     private val interactor: CourseDetailInteractor
-) : BaseViewModel() {
+) : BaseViewModel(uiData) {
 
     private val _courseDetail = MutableStateFlow<DataState<CourseModel>>(DataState.Loading)
     val courseDetail: StateFlow<DataState<CourseModel>> = _courseDetail.asStateFlow()

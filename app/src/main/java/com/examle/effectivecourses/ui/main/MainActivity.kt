@@ -5,12 +5,20 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.compose.rememberNavController
 import com.examle.effectivecourses.App
 import com.examle.effectivecourses.navigation.NavGraph
 import com.examle.effectivecourses.ui.theme.EffectiveCoursesTheme
 import com.examle.effectivecourses.ui.components.AppBottomBar
+import com.examle.effectivecourses.ui.components.ProgressDialog
 import org.koin.androidx.compose.KoinAndroidContext
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -29,6 +37,7 @@ class MainActivity : ComponentActivity() {
 
                 val navController = rememberNavController()
 
+                SetProgressLoading()
                 Scaffold(bottomBar = { AppBottomBar(navController) }) { padding ->
                     NavGraph(navController, padding)
                 }
@@ -39,6 +48,14 @@ class MainActivity : ComponentActivity() {
     }
 
 
+    @Composable
+    fun SetProgressLoading(){
+        val isLoadingState by viewModel.progressLoading.collectAsState()
+        var isLoading by remember { mutableStateOf(false) }
+        LaunchedEffect(isLoadingState) { isLoading = isLoadingState }
+
+        ProgressDialog(isLoading)
+    }
 
     private fun showSplashScreen() {
         installSplashScreen().apply {

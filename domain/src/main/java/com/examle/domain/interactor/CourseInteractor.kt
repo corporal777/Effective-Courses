@@ -43,6 +43,7 @@ class CourseInteractor(
         this.isSorted = isSorted
     }
 
+
     fun addOrRemoveCourseFavourite(model: CourseModel): Flow<List<CourseModel>> {
         return flow<CourseFavoriteModel> {
             val result = if (!model.isLiked) favoriteRepository.addCourseFavorite(model)

@@ -61,6 +61,7 @@ import com.examle.effectivecourses.ui.theme.CourseLessonColor
 import com.examle.effectivecourses.ui.theme.CourseMoreTextColor
 import com.examle.effectivecourses.ui.components.LoadingButton
 import com.examle.effectivecourses.ui.components.ProgressDialog
+import com.examle.effectivecourses.ui.components.TextNormal
 import com.examle.effectivecourses.utils.TextUtils
 import org.koin.androidx.compose.koinViewModel
 import kotlin.math.abs
@@ -76,12 +77,6 @@ fun DetailScreen(
     val scrollState = rememberScrollState()
     val uiState by viewModel.courseDetail.collectAsState()
     LaunchedEffect(Unit) { viewModel.getCourseDetail(courseId) }
-
-    val isLoadingState by viewModel.loading.collectAsState()
-    var isLoading by remember { mutableStateOf(false) }
-    LaunchedEffect(isLoadingState) { isLoading = isLoadingState }
-
-    ProgressDialog(isLoading)
 
     Box(
         modifier = Modifier
@@ -234,12 +229,9 @@ private fun HeaderItem(course: CourseModel) {
             }
             .padding(start = 7.dp, end = 10.dp))
 
-        Text(
+        TextNormal(
             text = course.startDate,
-            color = Color.White,
             fontSize = 14.sp,
-            fontFamily = TextUtils.robotoFont,
-            fontWeight = FontWeight.Normal,
             modifier = Modifier
                 .clip(CircleShape)
                 .background(CourseFavoriteBackColor)
@@ -252,15 +244,13 @@ private fun HeaderItem(course: CourseModel) {
     }
 
 
-    Text(
+    TextNormal(
         modifier = Modifier
             .fillMaxWidth()
             .padding(start = 15.dp, end = 15.dp, top = 25.dp),
         text = course.title,
         color = CourseItemTextColor,
         fontSize = 23.sp,
-        fontFamily = TextUtils.robotoFont,
-        fontWeight = FontWeight.Normal,
         textAlign = TextAlign.Start
     )
 
@@ -328,19 +318,17 @@ private fun ContentItem(course: CourseModel) {
     ) { }
 
 
-    Text(
+    TextNormal(
         modifier = Modifier
             .fillMaxWidth()
             .padding(start = 15.dp, end = 15.dp, top = 30.dp),
         text = "О курсе",
         color = CourseItemTextColor,
         fontSize = 23.sp,
-        fontFamily = TextUtils.robotoFont,
-        fontWeight = FontWeight.Normal,
         textAlign = TextAlign.Start
     )
 
-    Text(
+    TextNormal(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 15.dp, vertical = 10.dp)
@@ -349,8 +337,6 @@ private fun ContentItem(course: CourseModel) {
         color = CourseItemTextColor,
         fontSize = 15.sp,
         minLines = 20,
-        fontFamily = TextUtils.robotoFont,
-        fontWeight = FontWeight.Normal,
         textAlign = TextAlign.Start
     )
 }

@@ -4,6 +4,7 @@ import android.util.Log
 import com.examle.common.exceptions.RoomDbException
 import com.examle.data.db.CourseDataSource
 import com.examle.data.mapper.mapToCourseModelFromDbo
+import com.examle.data.mapper.mapToDboFromCourseModel
 import com.examle.domain.model.CourseFavoriteModel
 import com.examle.domain.model.CourseModel
 import com.examle.domain.repository.FavoriteRepository
@@ -20,7 +21,8 @@ class FavoriteRepositoryImpl(private val dataSource: CourseDataSource) :
     }
 
     override suspend fun addCourseFavorite(model: CourseModel): CourseFavoriteModel {
-        val result = dataSource.addCourse(model)
+        val dbo = model.mapToDboFromCourseModel()
+        val result = dataSource.addCourse(dbo)
         return if (result) CourseFavoriteModel(model.id, true)
         else throw RoomDbException()
 
